@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="ms" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Live Score Kejohanan Bola Jaring Prasekolah KPM Mersing 2026</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Poppins for sporty modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Sports Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        h1, h2, h3, .sport-font {
+            font-family: 'Poppins', sans-serif;
+        }
+        /* Custom scrollbar for beautiful lists */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        /* Live glowing pulse animation */
+        @keyframes pulse-glowing {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.05); }
+        }
+        .glowing-live {
+            animation: pulse-glowing 2s infinite;
+        }
+    </style>
+</head>
+<body class="h-full text-slate-800">
+
+    <div id="app" class="min-h-screen flex flex-col pb-16 bg-slate-950 text-slate-100" v-cloak>
+        
+        <!-- TOP Live Connectivity Notification Bar -->
+        <div :class="dbConnected ? 'bg-emerald-600' : 'bg-rose-600'" class="text-xs text-center py-1 transition-colors duration-300 font-semibold tracking-wide">
+            <span v-if="dbConnected"><i class="fas fa-wifi mr-1.5"></i> SISTEM LIVE BERHUBUNG MASA NYATA</span>
+            <span v-else><i class="fas fa-wifi-slash mr-1.5 glowing-live"></i> MENYAMBUNG KEMBALI...</span>
+        </div>
+
+        <!-- HERO HEADER SECTION -->
+        <header class="relative bg-gradient-to-b from-indigo-900 via-slate-900 to-slate-950 border-b border-indigo-500/20 px-4 py-8 text-center overflow-hidden">
+            <!-- Background Decorative Spheres -->
+            <div class="absolute -top-10 -left-10 w-40 h-40 bg-pink-500/10 rounded-full blur-3xl"></div>
+            <div class="absolute top-20 -right-10 w-48 h-48 bg-indigo-500/15 rounded-full blur-3xl"></div>
+
+            <div class="max-w-4xl mx-auto relative">
+                <!-- Logos Row (KPM & PPD) -->
+                <div class="flex justify-center items-center gap-4 mb-4">
+                    <!-- Logo KPM -->
+                    <div class="w-16 h-16 rounded-xl bg-slate-900/80 border border-slate-700/60 p-1.5 flex items-center justify-center shadow-lg transform hover:scale-105 transition-all">
+                        <img v-if="kpmLogoUrl" :src="kpmLogoUrl" class="max-w-full max-h-full object-contain" @error="kpmLogoUrl = ''" alt="Logo KPM" />
+                        <i v-else class="fas fa-university text-pink-400 text-2xl"></i>
+                    </div>
+                    <!-- Logo PPD / Pejabat Pendidikan Daerah -->
+                    <div class="w-16 h-16 rounded-xl bg-slate-900/80 border border-slate-700/60 p-1.5 flex items-center justify-center shadow-lg transform hover:scale-105 transition-all">
+                        <img v-if="ppdLogoUrl" :src="ppdLogoUrl" class="max-w-full max-h-full object-contain" @error="ppdLogoUrl = ''" alt="Logo PPD" />
+                        <i v-else class="fas fa-graduation-cap text-indigo-400 text-2xl"></i>
+                    </div>
+                </div>
+
+                <!-- Kejohanan Metadata -->
+                <p class="text-xs font-bold tracking-widest text-pink-400 uppercase mb-1">KEMENTERIAN PENDIDIKAN MALAYSIA</p>
+                <h1 class="text-2xl md:text-4xl font-extrabold uppercase tracking-tight text-white mb-2 leading-tight">
+                    Kejohanan Bola Jaring Prasekolah <span class="bg-gradient-to-r from-pink-400 to-indigo-300 bg-clip-text text-transparent">KPM Daerah Mersing 2026</span>
+                </h1>
+
+                <div class="flex flex-wrap justify-center items-center gap-3 mt-4 text-xs md:text-sm text-slate-300 font-medium">
+                    <span class="bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-full shadow-inner">
+                        <i class="far fa-calendar-alt text-pink-400 mr-1.5"></i> 6 OGOS 2026 (KHAMIS)
+                    </span>
+                    <span class="bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-full shadow-inner">
+                        <i class="far fa-clock text-pink-400 mr-1.5"></i> 8.30 PAGI - 5.30 PETANG
+                    </span>
+                    <span class="bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-full shadow-inner">
+                        <i class="fas fa-map-marker-alt text-pink-400 mr-1.5"></i> DEWAN TOK MIOR, ENDAU
+                    </span>
+                </div>
+            </div>
+        </header>
+
+        <!-- LIVE MATCH BANNER (Displays only if matches are "Sedang Bermain") -->
+        <section v-if="liveMatches.length > 0" class="max-w-6xl mx-auto w-full px-4 pt-6">
+            <div class="bg-gradient-to-r from-rose-900/40 via-purple-900/30 to-rose-900/40 border border-rose-500/40 rounded-2xl p-5 shadow-2xl relative overflow-hidden">
+                <div class="absolute -right-12 -bottom-12 w-32 h-32 bg-rose-500/10 rounded-full blur-2xl"></div>
+                
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <span class="flex h-3 w-3 relative">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
+                        </span>
+                        <span class="text-xs font-black tracking-widest text-rose-400 uppercase">SEDANG BERLANGSUNG</span>
+                    </div>
+                    <span class="text-xs text-slate-400 font-semibold bg-slate-900/60 border border-slate-800 px-2 py-1 rounded">Mersing 2026 Live</span>
+                </div>
+
+                <!-- Grid of Live Matches -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div v-for="match in liveMatches" :key="match.id" class="bg-slate-950/80 border border-rose-500/20 rounded-xl p-4 flex flex-col justify-between transition-all hover:border-rose-500/40 shadow-inner">
+                        <div class="flex justify-between items-center text-xs text-slate-400 mb-3 border-b border-slate-800/80 pb-2">
+                            <span class="font-bold text-pink-400"><i class="fas fa-hashtag mr-1"></i> {{ match.id }} ({{ getRoundLabel(match) }})</span>
+                            <span><i class="fas fa-map-pin mr-1 text-slate-500"></i> {{ match.court }}</span>
+                        </div>
+                        
+                        <!-- Core Score Row -->
+                        <div class="flex items-center justify-between px-2 py-1">
+                            <!-- Team A -->
+                            <div class="w-2/5 flex items-center justify-end gap-2.5">
+                                <div class="text-right">
+                                    <p class="font-extrabold text-sm md:text-base text-slate-100 truncate max-w-[100px] md:max-w-[140px]" :title="getMatchTeamName(match, 'A')">
+                                        {{ getMatchTeamName(match, 'A') }}
+                                    </p>
+                                    <span class="text-[10px] bg-indigo-950 text-indigo-300 font-bold px-2 py-0.5 rounded-full border border-indigo-800" v-if="match.group">Kump. {{ match.group }}</span>
+                                </div>
+                                <div class="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden border border-slate-800 bg-slate-900 shadow">
+                                    <img v-if="schoolLogos[getMatchTeamName(match, 'A')]" :src="schoolLogos[getMatchTeamName(match, 'A')]" class="w-full h-full object-cover" />
+                                    <div v-else :class="getTeamColor(getMatchTeamName(match, 'A'))" class="w-full h-full bg-gradient-to-tr flex items-center justify-center text-[10px] font-black text-white">
+                                        {{ getTeamInitials(getMatchTeamName(match, 'A')) }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Live Counter Score Box -->
+                            <div class="w-1/5 flex items-center justify-center gap-2">
+                                <span class="text-2xl md:text-3xl font-black text-rose-500 sport-font tracking-tight">{{ match.scoreA }}</span>
+                                <span class="text-slate-500 font-semibold">-</span>
+                                <span class="text-2xl md:text-3xl font-black text-rose-500 sport-font tracking-tight">{{ match.scoreB }}</span>
+                            </div>
+
+                            <!-- Team B -->
+                            <div class="w-2/5 flex items-center justify-start gap-2.5">
+                                <div class="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden border border-slate-800 bg-slate-900 shadow">
+                                    <img v-if="schoolLogos[getMatchTeamName(match, 'B')]" :src="schoolLogos[getMatchTeamName(match, 'B')]" class="w-full h-full object-cover" />
+                                    <div v-else :class="getTeamColor(getMatchTeamName(match, 'B'))" class="w-full h-full bg-gradient-to-tr flex items-center justify-center text-[10px] font-black text-white">
+                                        {{ getTeamInitials(getMatchTeamName(match, 'B')) }}
+                                    </div>
+                                </div>
+                                <div class="text-left">
+                                    <p class="font-extrabold text-sm md:text-base text-slate-100 truncate max-w-[100px] md:max-w-[140px]" :title="getMatchTeamName(match, 'B')">
+                                        {{ getMatchTeamName(match, 'B') }}
+                                    </p>
+                                    <span class="text-[10px] bg-indigo-950 text-indigo-300 font-bold px-2 py-0.5 rounded-full border border-indigo-800" v-if="match.group">Kump. {{ match.group }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar/Indicator -->
+                        <div class="mt-3 flex justify-between items-center bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-xs">
+                            <span class="text-[10px] text-slate-400 font-semibold uppercase"><i class="far fa-clock mr-1"></i> {{ match.time }}</span>
+                            <span class="text-rose-400 font-extrabold flex items-center gap-1">
+                                <span class="glowing-live">🔴 UPDATING LIVE</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CORE NAVIGATION TABS -->
+        <nav class="max-w-6xl mx-auto w-full px-4 mt-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-1.5 flex flex-wrap gap-1 shadow-lg">
+                <button 
+                    v-for="tab in tabs" 
+                    :key="tab.id"
+                    @click="activeTab = tab.id"
+                    :class="activeTab === tab.id ? 'bg-gradient-to-r from-pink-600 to-indigo-600 text-white font-bold shadow-md shadow-pink-600/10' : 'text-slate-300 hover:bg-slate-800/50 hover:text-white font-medium'"
+                    class="flex-1 min-w-[120px] text-xs md:text-sm py-3 px-3 rounded-lg transition-all flex items-center justify-center gap-2"
+                >
+                    <i :class="tab.icon"></i> {{ tab.name }}
+                </button>
+            </div>
+        </nav>
+
+        <!-- MAIN LAYOUT WRAPPER -->
+        <main class="max-w-6xl mx-auto w-full px-4 mt-6 flex-grow">
+
+            <!-- TAB 1: LIVE SCORE / KEPUTUSAN SEMASA -->
+            <div v-show="activeTab === 'live'" class="space-y-6">
+                <!-- Highlight summary banner -->
+                <div class="bg-gradient-to-r from-slate-900 to-slate-850 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fas fa-star text-pink-400"></i> Keputusan Terkini & Live Score
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Status kejohanan dipaparkan secara langsung. Gunakan navigasi tab lain untuk analisis terperinci.</p>
+                    </div>
+                    <!-- Quick Summary Badge -->
+                    <div class="flex items-center gap-3">
+                        <div class="bg-slate-800 border border-slate-700 px-3 py-2 rounded-xl text-center min-w-[80px]">
+                            <span class="block text-xl font-bold text-white sport-font">{{ completedCount }}</span>
+                            <span class="text-[9px] text-slate-400 font-semibold tracking-wider uppercase">Selesai</span>
+                        </div>
+                        <div class="bg-slate-800 border border-slate-700 px-3 py-2 rounded-xl text-center min-w-[80px]">
+                            <span class="block text-xl font-bold text-rose-500 glowing-live sport-font">{{ liveCount }}</span>
+                            <span class="text-[9px] text-rose-400 font-semibold tracking-wider uppercase">Live</span>
+                        </div>
+                        <div class="bg-slate-800 border border-slate-700 px-3 py-2 rounded-xl text-center min-w-[80px]">
+                            <span class="block text-xl font-bold text-slate-300 sport-font">{{ upcomingCount }}</span>
+                            <span class="text-[9px] text-slate-400 font-semibold tracking-wider uppercase">Belum Main</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent completed matches or live match stream -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div v-for="match in filteredLiveTabMatches" :key="match.id" 
+                         :class="match.status === 'Sedang Bermain' ? 'border-rose-500/40 shadow-rose-950/20' : 'border-slate-800 hover:border-slate-700'"
+                         class="bg-slate-900/60 border rounded-2xl p-5 shadow-lg relative overflow-hidden transition-all duration-300">
+                        
+                        <!-- Top details -->
+                        <div class="flex justify-between items-center text-xs text-slate-400 mb-4 border-b border-slate-800/60 pb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-bold">{{ match.id }}</span>
+                                <span class="font-bold text-indigo-400">{{ getRoundLabel(match) }}</span>
+                            </div>
+                            <span class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-2 py-1 rounded">
+                                <i class="fas fa-map-marker-alt text-rose-500"></i> {{ match.court }}
+                            </span>
+                        </div>
+
+                        <!-- Core Team VS Grid -->
+                        <div class="grid grid-cols-7 items-center justify-center my-3 text-center">
+                            <!-- Team A -->
+                            <div class="col-span-3 flex flex-col items-center justify-center">
+                                <div class="w-12 h-12 rounded-full flex items-center justify-center mb-2 shadow-lg overflow-hidden border border-slate-800">
+                                    <img v-if="schoolLogos[getMatchTeamName(match, 'A')]" :src="schoolLogos[getMatchTeamName(match, 'A')]" class="w-full h-full object-cover" />
+                                    <div v-else :class="getTeamColor(getMatchTeamName(match, 'A'))" class="w-full h-full bg-gradient-to-tr flex items-center justify-center text-xs font-black text-white">
+                                        {{ getTeamInitials(getMatchTeamName(match, 'A')) }}
+                                    </div>
+                                </div>
+                                <p class="font-bold text-xs md:text-sm text-slate-200 line-clamp-2 max-w-[130px]" :title="getMatchTeamName(match, 'A')">
+                                    {{ getMatchTeamName(match, 'A') }}
+                                </p>
+                            </div>
+
+                            <!-- VS / Score Indicator -->
+                            <div class="col-span-1 flex flex-col items-center justify-center">
+                                <span v-if="match.status === 'Belum Bermain'" class="text-xs font-black text-slate-500 uppercase tracking-widest">VS</span>
+                                <div v-else class="flex flex-col items-center">
+                                    <div class="flex items-center gap-1 font-bold sport-font text-2xl md:text-3xl text-white">
+                                        <span :class="match.status === 'Sedang Bermain' ? 'text-rose-500' : 'text-emerald-400'">{{ match.scoreA }}</span>
+                                        <span class="text-slate-500 text-base">-</span>
+                                        <span :class="match.status === 'Sedang Bermain' ? 'text-rose-500' : 'text-emerald-400'">{{ match.scoreB }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Team B -->
+                            <div class="col-span-3 flex flex-col items-center justify-center">
+                                <div class="w-12 h-12 rounded-full flex items-center justify-center mb-2 shadow-lg overflow-hidden border border-slate-800">
+                                    <img v-if="schoolLogos[getMatchTeamName(match, 'B')]" :src="schoolLogos[getMatchTeamName(match, 'B')]" class="w-full h-full object-cover" />
+                                    <div v-else :class="getTeamColor(getMatchTeamName(match, 'B'))" class="w-full h-full bg-gradient-to-tr flex items-center justify-center text-xs font-black text-white">
+                                        {{ getTeamInitials(getMatchTeamName(match, 'B')) }}
+                                    </div>
+                                </div>
+                                <p class="font-bold text-xs md:text-sm text-slate-200 line-clamp-2 max-w-[130px]" :title="getMatchTeamName(match, 'B')">
+                                    {{ getMatchTeamName(match, 'B') }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Footer Info Status -->
+                        <div class="mt-4 pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs">
+                            <span class="text-slate-400"><i class="far fa-clock mr-1"></i> {{ match.time }}</span>
+                            
+                            <!-- Badges -->
+                            <span v-if="match.status === 'Belum Bermain'" class="bg-slate-950 text-slate-400 border border-slate-800 px-3 py-1 rounded-full font-bold">
+                                Belum Bermain
+                            </span>
+                            <span v-else-if="match.status === 'Sedang Bermain'" class="bg-rose-950/80 text-rose-400 border border-rose-500/40 px-3 py-1 rounded-full font-black tracking-wider uppercase glowing-live text-[10px]">
+                                <i class="fas fa-gamepad mr-1"></i> Live
+                            </span>
+                            <span v-else-if="match.status === 'Tamat'" class="bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 px-3 py-1 rounded-full font-bold">
+                                Tamat
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="filteredLiveTabMatches.length === 0" class="text-center py-12 bg-slate-900/30 border border-slate-800 rounded-2xl">
+                    <i class="fas fa-futbol text-4xl text-slate-700 mb-3 block"></i>
+                    <p class="text-slate-400">Tiada perlawanan yang memenuhi kriteria buat masa ini.</p>
+                </div>
+            </div>
+
+            <!-- TAB 2: JADUAL PERLAWANAN -->
+            <div v-show="activeTab === 'schedule'" class="space-y-6">
+                <!-- Search & Filters -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col md:flex-row gap-3 justify-between items-center">
+                    <!-- Search Input -->
+                    <div class="relative w-full md:w-72">
+                        <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                        <input 
+                            v-model="searchQuery" 
+                            type="text" 
+                            placeholder="Cari nama sekolah..." 
+                            class="w-full bg-slate-950 text-slate-100 pl-10 pr-4 py-2 rounded-xl text-sm border border-slate-800 focus:outline-none focus:border-indigo-500 transition-colors"
+                        />
+                        <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <!-- Filter Buttons/Selectors -->
+                    <div class="flex flex-wrap gap-2 w-full md:w-auto justify-end">
+                        <button 
+                            v-for="filter in scheduleFilters" 
+                            :key="filter.id"
+                            @click="activeScheduleFilter = filter.id"
+                            :class="activeScheduleFilter === filter.id ? 'bg-indigo-600 text-white font-bold' : 'bg-slate-950 text-slate-400 border border-slate-800 hover:bg-slate-800/40 hover:text-white'"
+                            class="text-xs px-3.5 py-2 rounded-xl transition-all font-medium"
+                        >
+                            {{ filter.name }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Match List Grouped -->
+                <div class="space-y-4">
+                    <div v-for="match in filteredScheduleMatches" :key="match.id" 
+                         class="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:bg-slate-900 hover:border-slate-700/80">
+                        
+                        <!-- Left Info Block -->
+                        <div class="flex items-center gap-3.5 md:w-1/4">
+                            <span class="bg-slate-950 border border-slate-800 text-slate-300 font-bold px-3 py-2 rounded-xl text-center min-w-[50px] shadow-sm">
+                                <span class="block text-xs text-slate-500">NO</span>
+                                {{ match.id }}
+                            </span>
+                            <div>
+                                <span class="text-xs bg-indigo-950/80 text-indigo-400 font-black tracking-wider uppercase px-2.5 py-0.5 rounded-md border border-indigo-900/60 mb-1 inline-block">
+                                    {{ getRoundLabel(match) }}
+                                </span>
+                                <p class="text-xs text-slate-400 font-medium flex items-center gap-1.5 mt-0.5">
+                                    <span><i class="far fa-clock text-pink-500"></i> {{ match.time }}</span>
+                                    <span class="text-slate-700">•</span>
+                                    <span><i class="fas fa-map-marker-alt text-pink-500"></i> {{ match.court }}</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Core Team vs Team Row -->
+                        <div class="flex-grow flex items-center justify-between md:justify-center md:gap-12 py-2 md:py-0 border-y border-slate-800/50 md:border-y-0 px-1">
+                            <!-- Team A -->
+                            <div class="w-5/12 flex items-center justify-end gap-2.5">
+                                <span class="font-extrabold text-xs md:text-sm text-slate-100 truncate max-w-[100px] md:max-w-[180px]" :title="getMatchTeamName(match, 'A')">
+                                    {{ getMatchTeamName(match, 'A') }}
+                                </span>
+                                <div class="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden border border-slate-800 bg-slate-900 shadow">
+                                    <img v-if="schoolLogos[getMatchTeamName(match, 'A')]" :src="schoolLogos[getMatchTeamName(match, 'A')]" class="w-full h-full object-cover" />
+                                    <div v-else :class="getTeamColor(getMatchTeamName(match, 'A'))" class="w-full h-full bg-gradient-to-tr flex items-center justify-center text-[8px] font-black text-white">
+                                        {{ getTeamInitials(getMatchTeamName(match, 'A')) }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- VS / Scores -->
+                            <div class="w-2/12 flex justify-center items-center">
+                                <div v-if="match.status === 'Belum Bermain'" class="bg-slate-950 px-2.5 py-1 rounded-full border border-slate-800 text-slate-500 text-[10px] font-extrabold uppercase tracking-widest">VS</div>
+                                <div v-else class="flex items-center gap-2 font-bold sport-font text-lg">
+                                    <span :class="match.status === 'Sedang Bermain' ? 'text-rose-500' : 'text-emerald-400'">{{ match.scoreA }}</span>
+                                    <span class="text-slate-600">-</span>
+                                    <span :class="match.status === 'Sedang Bermain' ? 'text-rose-500' : 'text-emerald-400'">{{ match.scoreB }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Team B -->
+                            <div class="w-5/12 flex items-center justify-start gap-2.5">
+                                <div class="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden border border-slate-800 bg-slate-900 shadow">
+                                    <img v-if="schoolLogos[getMatchTeamName(match, 'B')]" :src="schoolLogos[getMatchTeamName(match, 'B')]" class="w-full h-full object-cover" />
+                                    <div v-else :class="getTeamColor(getMatchTeamName(match, 'B'))" class="w-full h-full bg-gradient-to-tr flex items-center justify-center text-[8px] font-black text-white">
+                                        {{ getTeamInitials(getMatchTeamName(match, 'B')) }}
+                                    </div>
+                                </div>
+                                <span class="font-extrabold text-xs md:text-sm text-slate-100 truncate max-w-[100px] md:max-w-[180px]" :title="getMatchTeamName(match, 'B')">
+                                    {{ getMatchTeamName(match, 'B') }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Right Status and Action -->
+                        <div class="flex items-center justify-between md:justify-end gap-3 md:w-1/4">
+                            <!-- Status Badge -->
+                            <div>
+                                <span v-if="match.status === 'Belum Bermain'" class="text-slate-400 text-xs font-semibold flex items-center gap-1.5 bg-slate-950 px-3 py-1 rounded-full border border-slate-800">
+                                    <i class="far fa-circle text-slate-600 text-[10px]"></i> Belum Bermain
+                                </span>
+                                <span v-else-if="match.status === 'Sedang Bermain'" class="bg-rose-950/80 text-rose-400 border border-rose-500/40 px-3 py-1 rounded-full font-black tracking-wider uppercase glowing-live text-[10px] flex items-center gap-1.5">
+                                    <i class="fas fa-satellite-dish"></i> Live
+                                </span>
+                                <span v-else-if="match.status === 'Tamat'" class="bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 px-3 py-1 rounded-full font-bold text-xs flex items-center gap-1.5">
+                                    <i class="fas fa-circle-check"></i> Tamat
+                                </span>
+                            </div>
+
+                            <!-- Admin Quick-Edit Button (Visible only if logged in) -->
+                            <button v-if="isAdmin" @click="openEditModal(match)" class="bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded-xl text-xs transition-colors shadow shadow-indigo-600/10">
+                                <i class="fas fa-edit"></i> Urus
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div v-if="filteredScheduleMatches.length === 0" class="text-center py-16 bg-slate-900/30 border border-slate-800 rounded-2xl">
+                    <i class="fas fa-calendar-times text-4xl text-slate-700 mb-3 block"></i>
+                    <p class="text-slate-400">Tiada jadual perlawanan ditemui.</p>
+                </div>
+            </div>
+
+            <!-- TAB 3: KEDUDUKAN KUMPULAN -->
+            <div v-show="activeTab === 'standings'" class="space-y-6">
+                <!-- Explanatory Header -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex items-center gap-3">
+                    <div class="w-10 h-10 bg-indigo-950 text-indigo-400 rounded-xl flex items-center justify-center border border-indigo-800/40">
+                        <i class="fas fa-calculator text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-white">Kedudukan Dikira Secara Automatik</h3>
+                        <p class="text-xs text-slate-400">Kedudukan ditentukan mengikut turutan: (1) Mata, (2) Beza Jaringan, (3) Jumlah Jaringan.</p>
+                    </div>
+                </div>
+
+                <!-- Grid of Group Tables -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div v-for="groupName in ['A', 'B', 'C', 'D']" :key="groupName" 
+                         class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                        
+                        <!-- Group Title Header -->
+                        <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                <span class="w-8 h-8 rounded-lg bg-pink-600 flex items-center justify-center text-sm font-black shadow shadow-pink-500/25">
+                                    {{ groupName }}
+                                </span>
+                                KUMPULAN {{ groupName }}
+                            </h3>
+                            <span class="text-[10px] bg-slate-950 text-slate-400 border border-slate-800 px-2.5 py-1 rounded-full font-bold">LIGA</span>
+                        </div>
+
+                        <!-- Responsive Table wrapper -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[500px] lg:min-w-0">
+                                <thead>
+                                    <tr class="text-slate-400 text-[10px] font-bold uppercase tracking-wider border-b border-slate-800/60 pb-2">
+                                        <th class="py-2.5 pl-1">Ked</th>
+                                        <th class="py-2.5">Pasukan (Sekolah)</th>
+                                        <th class="py-2.5 text-center">M</th>
+                                        <th class="py-2.5 text-center text-emerald-400">M</th>
+                                        <th class="py-2.5 text-center text-amber-500">S</th>
+                                        <th class="py-2.5 text-center text-rose-500">K</th>
+                                        <th class="py-2.5 text-center">JAR</th>
+                                        <th class="py-2.5 text-center">BOL</th>
+                                        <th class="py-2.5 text-center">BJ</th>
+                                        <th class="py-2.5 text-center font-black text-indigo-400">Mata</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800/40 text-xs font-medium">
+                                    <tr v-for="(team, index) in standings[groupName]" :key="team.name" 
+                                        :class="index < 2 ? 'bg-indigo-950/10' : ''"
+                                        class="hover:bg-slate-800/20 transition-colors">
+                                        
+                                        <!-- Rank -->
+                                        <td class="py-3 pl-1">
+                                            <span :class="index === 0 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : index === 1 ? 'bg-slate-300/10 text-slate-300 border border-slate-300/20' : 'bg-slate-950 text-slate-500 border border-slate-900'"
+                                                  class="w-5.5 h-5.5 rounded-md flex items-center justify-center font-black text-[10px] py-0.5 px-1 inline-block text-center">
+                                                {{ index + 1 }}
+                                            </span>
+                                        </td>
+                                        
+                                        <!-- Team Name with Small Mini Logo -->
+                                        <td class="py-3 font-bold text-slate-200">
+                                            <div class="flex items-center gap-2">
+                                                <!-- Small Mini Logo Badge -->
+                                                <div class="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden border border-slate-800 shadow shadow-slate-950">
+                                                    <img v-if="schoolLogos[team.name]" :src="schoolLogos[team.name]" class="w-full h-full object-cover" />
+                                                    <div v-else :class="getTeamColor(team.name)" class="w-full h-full bg-gradient-to-tr flex items-center justify-center text-[8px] font-black text-white uppercase">
+                                                        {{ getTeamInitials(team.name) }}
+                                                    </div>
+                                                </div>
+                                                <div class="flex flex-col">
+                                                    <span class="truncate max-w-[150px] inline-block" :title="team.name">{{ team.name }}</span>
+                                                    <span v-if="index < 2" class="text-[9px] text-indigo-400 font-extrabold flex items-center gap-1 mt-0.5">
+                                                        <i class="fas fa-ticket text-[8px]"></i> Lolos Suku Akhir
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <!-- Statistics -->
+                                        <td class="py-3 text-center text-slate-300">{{ team.played }}</td>
+                                        <td class="py-3 text-center text-emerald-400">{{ team.won }}</td>
+                                        <td class="py-3 text-center text-amber-500">{{ team.draw }}</td>
+                                        <td class="py-3 text-center text-rose-500">{{ team.lost }}</td>
+                                        <td class="py-3 text-center text-slate-400">{{ team.goalsFor }}</td>
+                                        <td class="py-3 text-center text-slate-400">{{ team.goalsAgainst }}</td>
+                                        <td class="py-3 text-center font-semibold" :class="team.goalDiff > 0 ? 'text-emerald-400' : team.goalDiff < 0 ? 'text-rose-400' : 'text-slate-400'">
+                                            {{ team.goalDiff > 0 ? '+' : '' }}{{ team.goalDiff }}
+                                        </td>
+                                        
+                                        <!-- Points -->
+                                        <td class="py-3 text-center font-black text-indigo-400 text-sm">{{ team.points }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: PUSINGAN KALAH MATI (BRACKETS) -->
+            <div v-show="activeTab === 'brackets'" class="space-y-6">
+                <!-- Explanatory Header -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-pink-950 text-pink-400 rounded-xl flex items-center justify-center border border-pink-800/40">
+                            <i class="fas fa-sitemap text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-white">Carta Aliran Pusingan Akhir</h3>
+                            <p class="text-xs text-slate-400">Pertandingan Kalah Mati dimuatkan secara automatik mengikut keputusan pusingan Liga.</p>
+                        </div>
+                    </div>
+
+                    <!-- Layout toggle for Brackets (Mobile Bracket Tab View) -->
+                    <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800/60 md:hidden">
+                        <button v-for="bTab in bracketTabs" :key="bTab.id" 
+                                @click="activeBracketTab = bTab.id"
+                                :class="activeBracketTab === bTab.id ? 'bg-pink-600 text-white font-bold' : 'text-slate-500 hover:text-slate-300'"
+                                class="text-[10px] px-2.5 py-1.5 rounded-lg font-medium transition-all">
+                            {{ bTab.name }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- DESKTOP SKELETON TREE VIEW (Hidden on Mobile, flex on MD and larger) -->
+                <div class="hidden md:flex flex-row justify-between items-stretch gap-4 p-6 bg-slate-900/40 border border-slate-800 rounded-3xl overflow-x-auto min-w-[850px]">
+                    
+                    <!-- COLUMN 1: SUKU AKHIR -->
+                    <div class="w-1/3 flex flex-col justify-around gap-6">
+                        <h4 class="text-xs font-black tracking-wider text-pink-500 uppercase text-center border-b border-slate-800 pb-2 mb-2">Suku Akhir</h4>
+                        
+                        <div v-for="match in bracketsData.quarterFinals" :key="match.id" 
+                             class="bg-slate-950 border border-slate-800 rounded-2xl p-3 shadow-md space-y-2 relative">
+                            <!-- Match ID & Details -->
+                            <div class="flex justify-between items-center text-[10px] text-slate-500">
+                                <span class="font-bold text-slate-400">#{{ match.id }}</span>
+                                <span>{{ match.time }} | {{ match.court }}</span>
+                            </div>
+                            <!-- Bracket Team Block -->
+                            <div class="space-y-1 text-xs">
+                                <div class="flex items-center justify-between p-1.5 rounded" :class="getBracketWinnerClass(match, 'A')">
+                                    <span class="truncate font-bold max-w-[140px]">{{ getMatchTeamName(match, 'A') }}</span>
+                                    <span class="font-extrabold sport-font" v-if="match.status !== 'Belum Bermain'">{{ match.scoreA }}</span>
+                                </div>
+                                <div class="flex items-center justify-between p-1.5 rounded" :class="getBracketWinnerClass(match, 'B')">
+                                    <span class="truncate font-bold max-w-[140px]">{{ getMatchTeamName(match, 'B') }}</span>
+                                    <span class="font-extrabold sport-font" v-if="match.status !== 'Belum Bermain'">{{ match.scoreB }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- COLUMN CONNECTOR -->
+                    <div class="w-8 flex flex-col justify-around py-12 text-slate-800">
+                        <div class="h-1/2 border-y border-r border-slate-700/50 rounded-r-lg"></div>
+                        <div class="h-1/2 border-y border-r border-slate-700/50 rounded-r-lg mt-12"></div>
+                    </div>
+
+                    <!-- COLUMN 2: SEPARUH AKHIR -->
+                    <div class="w-1/3 flex flex-col justify-around gap-8 py-8">
+                        <h4 class="text-xs font-black tracking-wider text-indigo-400 uppercase text-center border-b border-slate-800 pb-2 mb-2">Separuh Akhir</h4>
+                        
+                        <div v-for="match in bracketsData.semiFinals" :key="match.id" 
+                             class="bg-slate-950 border border-slate-850 rounded-2xl p-4 shadow-lg space-y-2">
+                            <div class="flex justify-between items-center text-[10px] text-slate-500">
+                                <span class="font-bold text-slate-400">#{{ match.id }}</span>
+                                <span>{{ match.time }} | {{ match.court }}</span>
+                            </div>
+                            <div class="space-y-1 text-xs">
+                                <div class="flex items-center justify-between p-2 rounded" :class="getBracketWinnerClass(match, 'A')">
+                                    <span class="truncate font-bold max-w-[140px]">{{ getMatchTeamName(match, 'A') }}</span>
+                                    <span class="font-extrabold sport-font" v-if="match.status !== 'Belum Bermain'">{{ match.scoreA }}</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2 rounded" :class="getBracketWinnerClass(match, 'B')">
+                                    <span class="truncate font-bold max-w-[140px]">{{ getMatchTeamName(match, 'B') }}</span>
+                                    <span class="font-extrabold sport-font" v-if="match.status !== 'Belum Bermain'">{{ match.scoreB }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- COLUMN CONNECTOR -->
+                    <div class="w-8 flex flex-col justify-center text-slate-800">
+                        <div class="h-1/3 border-y border-r border-slate-700/50 rounded-r-lg"></div>
+                    </div>
+
+                    <!-- COLUMN 3: AKHIR & REKOD PODIUM -->
+                    <div class="w-1/3 flex flex-col justify-around gap-6 py-4">
+                        <!-- AKHIR -->
+                        <div>
+                            <h4 class="text-xs font-black tracking-wider text-rose-500 uppercase text-center border-b border-slate-800 pb-2 mb-4">Pentas Akhir</h4>
+                            <div v-if="bracketsData.finals" 
+                                 class="bg-gradient-to-tr from-indigo-950 to-slate-950 border border-indigo-500/30 rounded-2xl p-4 shadow-xl space-y-2">
+                                <div class="flex justify-between items-center text-[10px] text-slate-400">
+                                    <span class="font-black text-indigo-400">#{{ bracketsData.finals.id }} (AKHIR)</span>
+                                    <span>{{ bracketsData.finals.time }} | {{ bracketsData.finals.court }}</span>
+                                </div>
+                                <div class="space-y-1.5 text-xs">
+                                    <div class="flex items-center justify-between p-2 rounded" :class="getBracketWinnerClass(bracketsData.finals, 'A')">
+                                        <span class="truncate font-bold max-w-[140px]">{{ getMatchTeamName(bracketsData.finals, 'A') }}</span>
+                                        <span class="font-extrabold sport-font" v-if="bracketsData.finals.status !== 'Belum Bermain'">{{ bracketsData.finals.scoreA }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between p-2 rounded" :class="getBracketWinnerClass(bracketsData.finals, 'B')">
+                                        <span class="truncate font-bold max-w-[140px]">{{ getMatchTeamName(bracketsData.finals, 'B') }}</span>
+                                        <span class="font-extrabold sport-font" v-if="bracketsData.finals.status !== 'Belum Bermain'">{{ bracketsData.finals.scoreB }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TEMPAT KETIGA -->
+                        <div>
+                            <h4 class="text-xs font-black tracking-wider text-amber-500 uppercase text-center border-b border-slate-800/80 pb-2 mb-4">Tempat Ke-3 & 4</h4>
+                            <div v-if="bracketsData.thirdPlace" 
+                                 class="bg-slate-950 border border-amber-500/20 rounded-2xl p-4 shadow-lg space-y-2">
+                                <div class="flex justify-between items-center text-[10px] text-slate-500">
+                                    <span class="font-bold text-amber-400">#{{ bracketsData.thirdPlace.id }}</span>
+                                    <span>{{ bracketsData.thirdPlace.time }} | {{ bracketsData.thirdPlace.court }}</span>
+                                </div>
+                                <div class="space-y-1 text-xs">
+                                    <div class="flex items-center justify-between p-2 rounded" :class="getBracketWinnerClass(bracketsData.thirdPlace, 'A')">
+                                        <span class="truncate font-bold max-w-[140px]">{{ getMatchTeamName(bracketsData.thirdPlace, 'A') }}</span>
+                                        <span class="font-extrabold sport-font" v-if="bracketsData.thirdPlace.status !== 'Belum Bermain'">{{ bracketsData.thirdPlace.scoreA }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between p-2 rounded" :class="getBracketWinnerClass(bracketsData.thirdPlace, 'B')">
+                                        <span class="truncate font-bold max-w-[140px]">{{ getMatchTeamName(bracketsData.thirdPlace, 'B') }}</span>
+                                        <span class="font-extrabold sport-font" v-if="bracketsData.thirdPlace.status !== 'Belum Bermain'">{{ bracketsData.thirdPlace.scoreB }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- MOBILE ACCORDION TABS (Optimized for Mobile viewports to prevent scrolling) -->
+                <div class="md:hidden space-y-4">
+                    <!-- Suku Akhir Mobile View -->
+                    <div v-show="activeBracketTab === 'sa'" class="space-y-3">
+                        <div v-for="match in bracketsData.quarterFinals" :key="match.id" class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2">
+                            <div class="flex justify-between items-center text-[10px] text-slate-500 border-b border-slate-800 pb-1.5 mb-2">
+                                <span class="font-black text-pink-400">#{{ match.id }} SUKU AKHIR</span>
+                                <span>{{ match.time }} | {{ match.court }}</span>
+                            </div>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex items-center justify-between p-2 bg-slate-950/80 rounded border border-slate-800" :class="getBracketWinnerClass(match, 'A')">
+                                    <span class="font-bold">{{ getMatchTeamName(match, 'A') }}</span>
+                                    <span class="font-black" v-if="match.status !== 'Belum Bermain'">{{ match.scoreA }}</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2 bg-slate-950/80 rounded border border-slate-800" :class="getBracketWinnerClass(match, 'B')">
+                                    <span class="font-bold">{{ getMatchTeamName(match, 'B') }}</span>
+                                    <span class="font-black" v-if="match.status !== 'Belum Bermain'">{{ match.scoreB }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Separuh Akhir Mobile View -->
+                    <div v-show="activeBracketTab === 'sf'" class="space-y-3">
+                        <div v-for="match in bracketsData.semiFinals" :key="match.id" class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2">
+                            <div class="flex justify-between items-center text-[10px] text-slate-500 border-b border-slate-800 pb-1.5 mb-2">
+                                <span class="font-black text-indigo-400">#{{ match.id }} SEPARUH AKHIR</span>
+                                <span>{{ match.time }} | {{ match.court }}</span>
+                            </div>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex items-center justify-between p-2 bg-slate-950/80 rounded border border-slate-800" :class="getBracketWinnerClass(match, 'A')">
+                                    <span class="font-bold">{{ getMatchTeamName(match, 'A') }}</span>
+                                    <span class="font-black" v-if="match.status !== 'Belum Bermain'">{{ match.scoreA }}</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2 bg-slate-950/80 rounded border border-slate-800" :class="getBracketWinnerClass(match, 'B')">
+                                    <span class="font-bold">{{ getMatchTeamName(match, 'B') }}</span>
+                                    <span class="font-black" v-if="match.status !== 'Belum Bermain'">{{ match.scoreB }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Finals Mobile View -->
+                    <div v-show="activeBracketTab === 'f'" class="space-y-4">
+                        <!-- AKHIR -->
+                        <div v-if="bracketsData.finals" class="bg-gradient-to-tr from-slate-900 to-indigo-950 border border-indigo-500/20 rounded-2xl p-4 space-y-2">
+                            <div class="flex justify-between items-center text-[10px] text-slate-400 border-b border-indigo-950 pb-1.5 mb-2">
+                                <span class="font-black text-rose-500">#{{ bracketsData.finals.id }} PENTAS AKHIR</span>
+                                <span>{{ bracketsData.finals.time }} | {{ bracketsData.finals.court }}</span>
+                            </div>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex items-center justify-between p-2 bg-slate-950/80 rounded border border-indigo-950" :class="getBracketWinnerClass(bracketsData.finals, 'A')">
+                                    <span class="font-bold">{{ getMatchTeamName(bracketsData.finals, 'A') }}</span>
+                                    <span class="font-black" v-if="bracketsData.finals.status !== 'Belum Bermain'">{{ bracketsData.finals.scoreA }}</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2 bg-slate-950/80 rounded border border-indigo-950" :class="getBracketWinnerClass(bracketsData.finals, 'B')">
+                                    <span class="font-bold">{{ getMatchTeamName(bracketsData.finals, 'B') }}</span>
+                                    <span class="font-black" v-if="bracketsData.finals.status !== 'Belum Bermain'">{{ bracketsData.finals.scoreB }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TEMPAT KETIGA -->
+                        <div v-if="bracketsData.thirdPlace" class="bg-slate-900 border border-amber-500/10 rounded-2xl p-4 space-y-2">
+                            <div class="flex justify-between items-center text-[10px] text-slate-500 border-b border-slate-800 pb-1.5 mb-2">
+                                <span class="font-black text-amber-500">#{{ bracketsData.thirdPlace.id }} TEMPAT KE-3 & 4</span>
+                                <span>{{ bracketsData.thirdPlace.time }} | {{ bracketsData.thirdPlace.court }}</span>
+                            </div>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex items-center justify-between p-2 bg-slate-950/80 rounded border border-slate-800" :class="getBracketWinnerClass(bracketsData.thirdPlace, 'A')">
+                                    <span class="font-bold">{{ getMatchTeamName(bracketsData.thirdPlace, 'A') }}</span>
+                                    <span class="font-black" v-if="bracketsData.thirdPlace.status !== 'Belum Bermain'">{{ bracketsData.thirdPlace.scoreA }}</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2 bg-slate-950/80 rounded border border-slate-800" :class="getBracketWinnerClass(bracketsData.thirdPlace, 'B')">
+                                    <span class="font-bold">{{ getMatchTeamName(bracketsData.thirdPlace, 'B') }}</span>
+                                    <span class="font-black" v-if="bracketsData.thirdPlace.status !== 'Belum Bermain'">{{ bracketsData.thirdPlace.scoreB }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: PANEL URUS SETIA -->
+            <div v-show="activeTab === 'admin'" class="space-y-6">
+                
+                <!-- If Admin is not logged in -->
+                <div v-if="!isAdmin" class="max-w-md mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+                    <div class="absolute -right-8 -top-8 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl"></div>
+                    
+                    <div class="text-center mb-6">
+                        <div class="w-14 h-14 bg-indigo-950 border border-indigo-800/40 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-lock text-indigo-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white">Log Masuk Urus Setia</h3>
+                        <p class="text-xs text-slate-400 mt-1">Sila masukkan PIN Keselamatan untuk mengurus keputusan perlawanan.</p>
+                    </div>
+
+                    <form @submit.prevent="verifyAdminPIN" class="space-y-4">
+                        <div>
+                            <label class="block text-xs text-slate-400 font-bold mb-1.5 uppercase">PIN Urus Setia</label>
+                            <input 
+                                v-model="adminPINInput" 
+                                type="password" 
+                                placeholder="Masukkan PIN" 
+                                class="w-full bg-slate-950 text-slate-100 text-center tracking-widest text-lg font-bold px-4 py-3 rounded-xl border border-slate-800 focus:outline-none focus:border-indigo-500 transition-colors"
+                            />
+                        </div>
+                        <button type="submit" class="w-full bg-gradient-to-r from-pink-600 to-indigo-600 text-white font-bold py-3 rounded-xl hover:shadow-lg hover:shadow-pink-500/10 transition-all text-sm">
+                            Log Masuk <i class="fas fa-arrow-right ml-1"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- If Admin is Logged In -->
+                <div v-else class="space-y-6">
+                    <!-- Admin Panel Summary & Controls -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="bg-indigo-600 text-[10px] text-white font-extrabold uppercase px-2.5 py-0.5 rounded-full">Sesi Aktif</span>
+                                <h3 class="text-base font-bold text-white">Selamat Datang, Urus Setia</h3>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1">Anda mempunyai akses penuh untuk melaras skor dan jadual perlawanan.</p>
+                        </div>
+                        <!-- Logout and Critical Actions -->
+                        <div class="flex flex-wrap gap-2">
+                            <button @click="showResetConfirmation = true" class="bg-rose-950 hover:bg-rose-900 text-rose-400 border border-rose-500/20 text-xs px-3.5 py-2.5 rounded-xl font-bold transition-all">
+                                <i class="fas fa-rotate mr-1.5"></i> Set Semula Kejohanan
+                            </button>
+                            <button @click="logoutAdmin" class="bg-slate-950 hover:bg-slate-800 text-slate-400 border border-slate-800 text-xs px-3.5 py-2.5 rounded-xl font-bold transition-all">
+                                <i class="fas fa-sign-out-alt mr-1.5"></i> Keluar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filter & Edit Match Grid -->
+                    <div class="bg-slate-900/40 border border-slate-800 rounded-2xl p-4">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="text-xs font-black tracking-wider text-slate-400 uppercase">Akses Pantas Urus Perlawanan</h4>
+                            <span class="text-[10px] text-indigo-400 font-bold bg-slate-900 border border-indigo-900/40 px-2 py-0.5 rounded">Pilih perlawanan di bawah untuk mengedit</span>
+                        </div>
+                        
+                        <!-- List of matches in a compact administrative view -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            <div v-for="match in sortedMatches" :key="match.id" 
+                                 @click="openEditModal(match)"
+                                 class="bg-slate-950 border border-slate-800 hover:border-indigo-500/40 rounded-xl p-3 shadow-sm cursor-pointer transition-all flex flex-col justify-between">
+                                <div class="flex justify-between items-center text-[10px] text-slate-500 border-b border-slate-900 pb-1.5 mb-2">
+                                    <span class="font-extrabold text-indigo-400">#{{ match.id }} ({{ getRoundLabel(match) }})</span>
+                                    <span :class="match.status === 'Sedang Bermain' ? 'text-rose-500 font-bold' : match.status === 'Tamat' ? 'text-emerald-500 font-bold' : 'text-slate-400'">
+                                        {{ match.status }}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs font-bold py-1">
+                                    <div class="truncate max-w-[100px]">{{ getMatchTeamName(match, 'A') }}</div>
+                                    <div class="sport-font text-sm text-indigo-300">{{ match.scoreA }} - {{ match.scoreB }}</div>
+                                    <div class="truncate max-w-[100px]">{{ getMatchTeamName(match, 'B') }}</div>
+                                </div>
+                                <div class="mt-2 text-[9px] text-slate-500 text-right flex justify-between items-center pt-1.5 border-t border-slate-900">
+                                    <span>{{ match.court }}</span>
+                                    <span>{{ match.time }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+
+        <!-- EDIT MATCH MODAL (Custom designed - No alert/confirm dialog used) -->
+        <div v-if="editingMatch" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
+                <!-- Close Button -->
+                <button @click="closeEditModal" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 w-8 h-8 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center">
+                    <i class="fas fa-times"></i>
+                </button>
+
+                <div class="mb-6">
+                    <span class="bg-indigo-950 text-indigo-400 border border-indigo-900 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md">
+                        KEMAS KINI REKOD MATA - PERLAWANAN #{{ editingMatch.id }}
+                    </span>
+                    <h3 class="text-base font-bold text-white mt-2">{{ getRoundLabel(editingMatch) }}</h3>
+                </div>
+
+                <form @submit.prevent="saveMatchChanges" class="space-y-4">
+                    <!-- Teams Score Inputs Layout -->
+                    <div class="grid grid-cols-2 gap-4 bg-slate-950 border border-slate-850/80 p-4 rounded-2xl">
+                        <!-- Team A Input Column -->
+                        <div class="flex flex-col items-center">
+                            <label class="text-[10px] text-slate-400 font-bold mb-2 text-center truncate w-full" :title="getMatchTeamName(editingMatch, 'A')">
+                                {{ getMatchTeamName(editingMatch, 'A') }}
+                            </label>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" @click="decrementScore('A')" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 flex items-center justify-center font-bold text-slate-300">-</button>
+                                <input 
+                                    v-model.number="editingMatch.scoreA" 
+                                    type="number" 
+                                    min="0" 
+                                    class="w-14 bg-slate-900 text-white text-center font-black sport-font text-lg py-1.5 rounded-lg border border-slate-800 focus:outline-none"
+                                />
+                                <button type="button" @click="incrementScore('A')" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 flex items-center justify-center font-bold text-slate-300">+</button>
+                            </div>
+                        </div>
+
+                        <!-- Team B Input Column -->
+                        <div class="flex flex-col items-center border-l border-slate-800/60 pl-4">
+                            <label class="text-[10px] text-slate-400 font-bold mb-2 text-center truncate w-full" :title="getMatchTeamName(editingMatch, 'B')">
+                                {{ getMatchTeamName(editingMatch, 'B') }}
+                            </label>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" @click="decrementScore('B')" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 flex items-center justify-center font-bold text-slate-300">-</button>
+                                <input 
+                                    v-model.number="editingMatch.scoreB" 
+                                    type="number" 
+                                    min="0" 
+                                    class="w-14 bg-slate-900 text-white text-center font-black sport-font text-lg py-1.5 rounded-lg border border-slate-800 focus:outline-none"
+                                />
+                                <button type="button" @click="incrementScore('B')" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 flex items-center justify-center font-bold text-slate-300">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Meta details edit fields -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] text-slate-400 font-bold mb-1 uppercase">Status Perlawanan</label>
+                            <select v-model="editingMatch.status" class="w-full bg-slate-950 text-slate-200 text-xs px-3 py-2.5 rounded-xl border border-slate-800 focus:outline-none">
+                                <option value="Belum Bermain">Belum Bermain</option>
+                                <option value="Sedang Bermain">Sedang Bermain</option>
+                                <option value="Tamat">Tamat</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 font-bold mb-1 uppercase">Gelanggang</label>
+                            <select v-model="editingMatch.court" class="w-full bg-slate-950 text-slate-200 text-xs px-3 py-2.5 rounded-xl border border-slate-800 focus:outline-none">
+                                <option value="Gelanggang 1">Gelanggang 1</option>
+                                <option value="Gelanggang 2">Gelanggang 2</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] text-slate-400 font-bold mb-1 uppercase">Masa Perlawanan</label>
+                            <input v-model="editingMatch.time" type="text" class="w-full bg-slate-950 text-slate-200 text-xs px-3 py-2.5 rounded-xl border border-slate-800 focus:outline-none" />
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 font-bold mb-1 uppercase">Tarikh</label>
+                            <input v-model="editingMatch.date" type="text" class="w-full bg-slate-950 text-slate-200 text-xs px-3 py-2.5 rounded-xl border border-slate-800 focus:outline-none" />
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="pt-4 flex gap-2">
+                        <button type="button" @click="closeEditModal" class="flex-1 bg-slate-950 border border-slate-800 text-slate-400 text-xs font-bold py-3 rounded-xl transition-all">
+                            Batal
+                        </button>
+                        <button type="submit" class="flex-1 bg-gradient-to-r from-pink-600 to-indigo-600 text-white text-xs font-bold py-3 rounded-xl hover:shadow-lg transition-all">
+                            <span v-if="saving"><i class="fas fa-spinner animate-spin mr-1"></i> Menyimpan...</span>
+                            <span v-else><i class="fas fa-save mr-1"></i> Simpan Rekod</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- RESET TOURNAMENT CONFIRMATION MODAL -->
+        <div v-if="showResetConfirmation" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center">
+                <div class="w-14 h-14 bg-rose-950/80 border border-rose-800/40 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-triangle-exclamation text-rose-500 text-2xl"></i>
+                </div>
+                <h3 class="text-base font-bold text-white mb-2">Set Semula Kejohanan?</h3>
+                <p class="text-xs text-slate-400 mb-6">Tindakan ini akan menetapkan semula semua mata kepada 0 dan status kepada 'Belum Bermain'. Tindakan ini tidak boleh dibatalkan.</p>
+                
+                <div class="flex gap-2">
+                    <button @click="showResetConfirmation = false" class="flex-1 bg-slate-950 border border-slate-800 text-slate-400 text-xs font-bold py-3 rounded-xl">
+                        Batal
+                    </button>
+                    <button @click="triggerResetTournament" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold py-3 rounded-xl shadow-lg shadow-rose-600/10 transition-all">
+                        <span v-if="resetting"><i class="fas fa-spinner animate-spin mr-1"></i> Menetapkan...</span>
+                        <span v-else>Ya, Set Semula</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOAST SYSTEM -->
+        <div class="fixed bottom-4 right-4 z-50 pointer-events-none space-y-2">
+            <transition-group name="toast-slide">
+                <div v-for="toast in toasts" :key="toast.id" 
+                     :class="toast.type === 'error' ? 'bg-rose-950/95 border-rose-800/80 text-rose-300' : 'bg-indigo-950/95 border-indigo-800/80 text-indigo-200'"
+                     class="pointer-events-auto border px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 text-xs font-semibold backdrop-blur max-w-xs transition-all duration-300">
+                    <i :class="toast.type === 'error' ? 'fas fa-circle-exclamation text-rose-500' : 'fas fa-circle-check text-indigo-400'"></i>
+                    <span>{{ toast.message }}</span>
+                </div>
+            </transition-group>
+        </div>
+
+    </div>
+
+    <!-- Vue 3 JS -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- FIREBASE SDK v11.6.1 INTEGRATION -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, writeBatch, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Environment Variables supplied
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'mersing-netball-2026';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : {
+                apiKey: "dummy-key-for-test",
+                authDomain: "dummy-auth-domain.firebaseapp.com",
+                projectId: "dummy-project-id",
+                storageBucket: "dummy-storage-bucket.appspot.com",
+                messagingSenderId: "12345",
+                appId: "1-12345-web"
+              };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : undefined;
+
+        // SEEDING DATA FOR TOURNAMENT (15 min play + 5 min gap = 20 min intervals)
+        const INITIAL_MATCHES = [
+            // Slot 1 (08:30 AM) - Tiada A3
+            {id: "M1", round: "Group", group: "B", teamA: "SK Mersing Kanan", teamB: "SK Nitar 2", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 1", time: "08:30 AM", date: "06 Ogos 2026"},
+            {id: "M2", round: "Group", group: "C", teamA: "SK Lembaga", teamB: "SK Sri Mersing", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 2", time: "08:30 AM", date: "06 Ogos 2026"},
+            
+            // Slot 2 (08:50 AM) - Perlawanan Pertama A3 bermula di sini
+            {id: "M3", round: "Group", group: "A", teamA: "SK Bandar Endau", teamB: "SK Sawah Dato", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 1", time: "08:50 AM", date: "06 Ogos 2026"},
+            {id: "M4", round: "Group", group: "A", teamA: "SK Tenggaroh 5", teamB: "SK Kem Iskandar", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 2", time: "08:50 AM", date: "06 Ogos 2026"},
+            
+            // Slot 3 (09:10 AM)
+            {id: "M5", round: "Group", group: "D", teamA: "SK Nitar 1", teamB: "SK Teluk Lipat", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 1", time: "09:10 AM", date: "06 Ogos 2026"},
+            {id: "M6", round: "Group", group: "B", teamA: "SK Mersing Kanan", teamB: "SK Bandar Mersing", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 2", time: "09:10 AM", date: "06 Ogos 2026"},
+            
+            // Slot 4 (09:30 AM)
+            {id: "M7", round: "Group", group: "C", teamA: "SK Lembaga", teamB: "SK Pusat Air Tawar", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 1", time: "09:30 AM", date: "06 Ogos 2026"},
+            {id: "M8", round: "Group", group: "A", teamA: "SK Sawah Dato", teamB: "SK Kem Iskandar", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 2", time: "09:30 AM", date: "06 Ogos 2026"},
+            
+            // Slot 5 (09:50 AM)
+            {id: "M9", round: "Group", group: "A", teamA: "SK Bandar Endau", teamB: "SK Tenggaroh 5", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 1", time: "09:50 AM", date: "06 Ogos 2026"},
+            {id: "M10", round: "Group", group: "D", teamA: "SK Nitar 1", teamB: "SK Seri Pantai", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 2", time: "09:50 AM", date: "06 Ogos 2026"},
+            
+            // Slot 6 (10:10 AM)
+            {id: "M11", round: "Group", group: "B", teamA: "SK Nitar 2", teamB: "SK Bandar Mersing", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 1", time: "10:10 AM", date: "06 Ogos 2026"},
+            {id: "M12", round: "Group", group: "C", teamA: "SK Sri Mersing", teamB: "SK Pusat Air Tawar", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 2", time: "10:10 AM", date: "06 Ogos 2026"},
+            
+            // Slot 7 (10:30 AM)
+            {id: "M13", round: "Group", group: "A", teamA: "SK Sawah Dato", teamB: "SK Tenggaroh 5", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 1", time: "10:30 AM", date: "06 Ogos 2026"},
+            {id: "M14", round: "Group", group: "D", teamA: "SK Teluk Lipat", teamB: "SK Seri Pantai", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 2", time: "10:30 AM", date: "06 Ogos 2026"},
+            
+            // Slot 8 (10:50 AM)
+            {id: "M15", round: "Group", group: "A", teamA: "SK Bandar Endau", teamB: "SK Kem Iskandar", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 1", time: "10:50 AM", date: "06 Ogos 2026"},
+
+            // SUKU AKHIR (M16 - M19) - Bermula jam 11:10 AM
+            {id: "M16", round: "Suku Akhir", matchNum: 1, teamAPlaceholder: "Johan Kumpulan A", teamBPlaceholder: "Naib Johan Kumpulan C", teamA: "", teamB: "", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 1", time: "11:10 AM", date: "06 Ogos 2026"},
+            {id: "M17", round: "Suku Akhir", matchNum: 2, teamAPlaceholder: "Johan Kumpulan B", teamBPlaceholder: "Naib Johan Kumpulan D", teamA: "", teamB: "", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 2", time: "11:10 AM", date: "06 Ogos 2026"},
+            {id: "M18", round: "Suku Akhir", matchNum: 3, teamAPlaceholder: "Johan Kumpulan C", teamBPlaceholder: "Naib Johan Kumpulan A", teamA: "", teamB: "", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 1", time: "11:30 AM", date: "06 Ogos 2026"},
+            {id: "M19", round: "Suku Akhir", matchNum: 4, teamAPlaceholder: "Johan Kumpulan D", teamBPlaceholder: "Naib Johan Kumpulan B", teamA: "", teamB: "", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 2", time: "11:30 AM", date: "06 Ogos 2026"},
+
+            // REHAT TENGAH HARI / SOLAT ZOHOR (11:50 AM - 02:30 PM)
+
+            // SEPARUH AKHIR (M20 - M21) - Bermula jam 02:30 PM
+            {id: "M20", round: "Separuh Akhir", matchNum: 1, teamAPlaceholder: "Pemenang Suku Akhir 1", teamBPlaceholder: "Pemenang Suku Akhir 2", teamA: "", teamB: "", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 1", time: "02:30 PM", date: "06 Ogos 2026"},
+            {id: "M21", round: "Separuh Akhir", matchNum: 2, teamAPlaceholder: "Pemenang Suku Akhir 3", teamBPlaceholder: "Pemenang Suku Akhir 4", teamA: "", teamB: "", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 2", time: "02:30 PM", date: "06 Ogos 2026"},
+
+            // TEMPAT KE-3 & 4 (M22) - Bermula jam 02:50 PM
+            {id: "M22", round: "Penentuan Tempat Ke-3 & 4", matchNum: 1, teamAPlaceholder: "Kalah Separuh Akhir 1", teamBPlaceholder: "Kalah Separuh Akhir 2", teamA: "", teamB: "", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 1", time: "02:50 PM", date: "06 Ogos 2026"},
+
+            // AKHIR (M23) - Bermula jam 03:10 PM
+            {id: "M23", round: "Akhir", matchNum: 1, teamAPlaceholder: "Pemenang Separuh Akhir 1", teamBPlaceholder: "Pemenang Separuh Akhir 2", teamA: "", teamB: "", scoreA: 0, scoreB: 0, status: "Belum Bermain", court: "Gelanggang 1", time: "03:10 PM", date: "06 Ogos 2026"}
+        ];
+
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    dbConnected: false,
+                    activeTab: 'live',
+                    activeBracketTab: 'sa', // For mobile view
+                    activeScheduleFilter: 'all',
+                    searchQuery: '',
+                    
+                    // ==========================================
+                    // 🌟 CONFIG LOGO (Ubah pautan / URL di sini)
+                    // ==========================================
+                    ppdLogoUrl: "https://i.postimg.cc/L6sYTmKz/PPD.png",
+                    kpmLogoUrl: "https://i.postimg.cc/dQBkWxVb/Untitled-design.png",
+                    schoolLogos: {
+                        "SK Bandar Endau": "https://i.postimg.cc/HnkxB9NF/SKBE.png",     // Contoh: "https://.../logo_bandar_endau.png"
+                        "SK Sawah Dato": "https://i.postimg.cc/K82nDdfS/SKSD.png",       // Jika dibiarkan kosong (""), lencana inisial pintar akan dijana secara automatik.
+                        "SK Tenggaroh 5": "https://i.postimg.cc/CKZLBK8Y/SKT5.png",
+                        "SK Kem Iskandar": "https://i.postimg.cc/43vV0w83/SKKI.png",
+                        "SK Mersing Kanan": "https://i.postimg.cc/268bKYbK/SKMK.png",
+                        "SK Nitar 2": "https://i.postimg.cc/ZnvqG5T8/SKN2.png",
+                        "SK Bandar Mersing": "https://i.postimg.cc/vTZrf9tG/SKBM.png",
+                        "SK Lembaga": "https://i.postimg.cc/WzykZy3p/SKLE.png",
+                        "SK Sri Mersing": "https://i.postimg.cc/NFXH14ry/SKSM.png",
+                        "SK Pusat Air Tawar": "https://i.postimg.cc/nVXYFKr6/SKPAT.png",
+                        "SK Nitar 1": "https://i.postimg.cc/jjvCN1g7/SKN1.png",
+                        "SK Teluk Lipat": "https://i.postimg.cc/tJbXMtMV/SKTL.png",
+                        "SK Seri Pantai": "https://i.postimg.cc/fbkkcKGn/SKSP.png"
+                    },
+                    // ==========================================
+
+                    matches: [],
+                    adminPINInput: '',
+                    isAdmin: false,
+                    editingMatch: null,
+                    saving: false,
+                    resetting: false,
+                    showResetConfirmation: false,
+                    toasts: [],
+                    tabs: [
+                        { id: 'live', name: 'Live Score', icon: 'fas fa-play-circle' },
+                        { id: 'schedule', name: 'Jadual', icon: 'fas fa-calendar-alt' },
+                        { id: 'standings', name: 'Kedudukan', icon: 'fas fa-table' },
+                        { id: 'brackets', name: 'Kalah Mati', icon: 'fas fa-sitemap' },
+                        { id: 'admin', name: 'Urus Setia', icon: 'fas fa-user-shield' }
+                    ],
+                    scheduleFilters: [
+                        { id: 'all', name: 'Semua' },
+                        { id: 'Group', name: 'Liga Kumpulan' },
+                        { id: 'Knockout', name: 'Kalah Mati' },
+                        { id: 'Belum Bermain', name: 'Belum Bermain' },
+                        { id: 'Sedang Bermain', name: 'Sedang' },
+                        { id: 'Tamat', name: 'Selesai' }
+                    ],
+                    bracketTabs: [
+                        { id: 'sa', name: 'Suku Akhir' },
+                        { id: 'sf', name: 'Separuh' },
+                        { id: 'f', name: 'Pentas Akhir' }
+                    ]
+                }
+            },
+
+            computed: {
+                // Returns all matches sorted by chronological ID numeric value
+                sortedMatches() {
+                    return [...this.matches].sort((a, b) => {
+                        const numA = parseInt(a.id.replace('M', ''));
+                        const numB = parseInt(b.id.replace('M', ''));
+                        return numA - numB;
+                    });
+                },
+
+                // Filters matches based on user's query and selected navigation category
+                filteredScheduleMatches() {
+                    let results = this.sortedMatches;
+
+                    if (this.activeScheduleFilter !== 'all') {
+                        if (this.activeScheduleFilter === 'Group') {
+                            results = results.filter(m => m.round === 'Group');
+                        } else if (this.activeScheduleFilter === 'Knockout') {
+                            results = results.filter(m => m.round !== 'Group');
+                        } else {
+                            results = results.filter(m => m.status === this.activeScheduleFilter);
+                        }
+                    }
+
+                    if (this.searchQuery.trim() !== '') {
+                        const q = this.searchQuery.toLowerCase();
+                        results = results.filter(m => {
+                            const teamA = this.getMatchTeamName(m, 'A').toLowerCase();
+                            const teamB = this.getMatchTeamName(m, 'B').toLowerCase();
+                            return teamA.includes(q) || teamB.includes(q);
+                        });
+                    }
+
+                    return results;
+                },
+
+                // Filter specifically for live dashboard list
+                filteredLiveTabMatches() {
+                    return this.sortedMatches.filter(m => m.status === 'Sedang Bermain' || m.status === 'Tamat');
+                },
+
+                // Live matches count
+                liveCount() {
+                    return this.matches.filter(m => m.status === 'Sedang Bermain').length;
+                },
+
+                // Completed matches count
+                completedCount() {
+                    return this.matches.filter(m => m.status === 'Tamat').length;
+                },
+
+                // Upcoming matches count
+                upcomingCount() {
+                    return this.matches.filter(m => m.status === 'Belum Bermain').length;
+                },
+
+                // Live matches specifically for horizontal stream
+                liveMatches() {
+                    return this.matches.filter(m => m.status === 'Sedang Bermain');
+                },
+
+                // AUTOMATIC GROUP LIGA CALCULATION
+                standings() {
+                    // Predefined teams structure according to Mersing 2026 specs
+                    const groups = {
+                        A: [
+                            { name: "SK Bandar Endau", played: 0, won: 0, draw: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDiff: 0, points: 0 },
+                            { name: "SK Sawah Dato", played: 0, won: 0, draw: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDiff: 0, points: 0 },
+                            { name: "SK Tenggaroh 5", played: 0, won: 0, draw: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDiff: 0, points: 0 },
+                            { name: "SK Kem Iskandar", played: 0, won: 0, draw: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDiff: 0, points: 0 }
+                        ],
+                        B: [
+                            { name: "SK Mersing Kanan", played: 0, won: 0, draw: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDiff: 0, points: 0 },
+                            { name: "SK Nitar 2", played: 0, won: 0, draw: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDiff: 0, points: 0 },
+                            { name: "SK Bandar Mersing", played: 0, won: 0, draw: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDiff: 0, points: 0 }
+                        ],
+                        C: [
+                            { name: "SK Lembaga", played: 0, won: 0, draw: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDiff: 0, points: 0 },
+                            { name: "SK Sri Mersing", played: 0, won: 0, draw: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDiff: 0, points: 0 },
+                            { name: "SK Pusat Air Tawar", played: 0, won: 0, draw: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDiff: 0, points: 0 }
+                        ],
+                        D: [
+                            { name: "SK Nitar 1", played: 0, won: 0, draw: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDiff: 0, points: 0 },
+                            { name: "SK Teluk Lipat", played: 0, won: 0, draw: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDiff: 0, points: 0 },
+                            { name: "SK Seri Pantai", played: 0, won: 0, draw: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDiff: 0, points: 0 }
+                        ]
+                    };
+
+                    // Compute each finished Group match
+                    this.matches.forEach(m => {
+                        if (m.round === 'Group' && m.status === 'Tamat') {
+                            const groupList = groups[m.group];
+                            if (!groupList) return;
+
+                            const tA = groupList.find(team => team.name === m.teamA);
+                            const tB = groupList.find(team => team.name === m.teamB);
+
+                            if (tA && tB) {
+                                tA.played++;
+                                tB.played++;
+                                tA.goalsFor += m.scoreA;
+                                tA.goalsAgainst += m.scoreB;
+                                tB.goalsFor += m.scoreB;
+                                tB.goalsAgainst += m.scoreA;
+
+                                if (m.scoreA > m.scoreB) {
+                                    tA.won++;
+                                    tA.points += 3;
+                                    tB.lost++;
+                                } else if (m.scoreA < m.scoreB) {
+                                    tB.won++;
+                                    tB.points += 3;
+                                    tA.lost++;
+                                } else {
+                                    tA.draw++;
+                                    tB.draw++;
+                                    tA.points += 1;
+                                    tB.points += 1;
+                                }
+                                tA.goalDiff = tA.goalsFor - tA.goalsAgainst;
+                                tB.goalDiff = tB.goalsFor - tB.goalsAgainst;
+                            }
+                        }
+                    });
+
+                    // Sort standings automatically for each group
+                    // 1. Points (Mata) DESC, 2. Goal Diff (Beza Jaringan) DESC, 3. Goals For (Jaringan) DESC
+                    Object.keys(groups).forEach(key => {
+                        groups[key].sort((a, b) => {
+                            if (b.points !== a.points) return b.points - a.points;
+                            if (b.goalDiff !== a.goalDiff) return b.goalDiff - a.goalDiff;
+                            return b.goalsFor - a.goalsFor;
+                        });
+                    });
+
+                    return groups;
+                },
+
+                // AUTO-DETERMINING ADVANCEMENT FOR KNOCKOUT ROUNDS
+                bracketsData() {
+                    const quaters = this.matches.filter(m => m.round === 'Suku Akhir');
+                    const semis = this.matches.filter(m => m.round === 'Separuh Akhir');
+                    const third = this.matches.find(m => m.round === 'Penentuan Tempat Ke-3 & 4');
+                    const final = this.matches.find(m => m.round === 'Akhir');
+
+                    return {
+                        quarterFinals: quaters,
+                        semiFinals: semis,
+                        thirdPlace: third,
+                        finals: final
+                    };
+                }
+            },
+
+            async mounted() {
+                try {
+                    // Initialize Firebase SDK
+                    const app = initializeApp(firebaseConfig);
+                    const db = getFirestore(app);
+                    const auth = getAuth(app);
+
+                    // Sign-In Priority matching Rule 3
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+
+                    // Keep track of Firestore database status
+                    this.dbConnected = true;
+
+                    // Reference to our public matches collection - matching RULE 1
+                    const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'matches');
+
+                    // Synchronize and fetch matches with Real-time listener
+                    onSnapshot(collectionRef, (snapshot) => {
+                        if (snapshot.empty) {
+                            // Seed empty Firestore with baseline data on initial startup
+                            this.seedDatabase(db);
+                        } else {
+                            const fetchedMatches = [];
+                            snapshot.forEach(doc => {
+                                fetchedMatches.push({
+                                    id: doc.id,
+                                    ...doc.data()
+                                });
+                            });
+                            this.matches = fetchedMatches;
+                        }
+                    }, (error) => {
+                        this.showToast("Ralat menyambung pangkalan data.", "error");
+                        console.error("Firestore loading error:", error);
+                    });
+
+                    // Check if Admin Session was saved in sessionStorage
+                    if (sessionStorage.getItem('mersing_netball_admin') === 'true') {
+                        this.isAdmin = true;
+                    }
+
+                } catch (error) {
+                    this.showToast("Gagal memulakan modul rangkaian.", "error");
+                    console.error("Firebase init failure:", error);
+                }
+            },
+
+            methods: {
+                // Dynamic resolution of team names to handle placeholder dependencies
+                getMatchTeamName(match, side) {
+                    // Group stages have fixed names
+                    if (match.round === 'Group') {
+                        return side === 'A' ? match.teamA : match.teamB;
+                    }
+
+                    // Dynamic resolving of Suku Akhir from calculated Liga Standings
+                    if (match.round === 'Suku Akhir') {
+                        const key = side === 'A' ? 'A' : 'B';
+                        const placeHolder = side === 'A' ? match.teamAPlaceholder : match.teamBPlaceholder;
+                        
+                        // Check if group is finished. Group A, B, C, D matches finished counts.
+                        // Group A: 6 matches, Group B, C, D: 3 matches each.
+                        const isGroupCompleted = (groupCode) => {
+                            const totalNeeded = groupCode === 'A' ? 6 : 3;
+                            const finished = this.matches.filter(m => m.round === 'Group' && m.group === groupCode && m.status === 'Tamat').length;
+                            return finished === totalNeeded;
+                        };
+
+                        if (match.id === "M16") { // Johan A vs Naib Johan C
+                            if (side === 'A') {
+                                return isGroupCompleted('A') ? this.standings.A[0].name : placeHolder;
+                            } else {
+                                return isGroupCompleted('C') ? this.standings.C[1].name : placeHolder;
+                            }
+                        }
+                        if (match.id === "M17") { // Johan B vs Naib Johan D
+                            if (side === 'A') {
+                                return isGroupCompleted('B') ? this.standings.B[0].name : placeHolder;
+                            } else {
+                                return isGroupCompleted('D') ? this.standings.D[1].name : placeHolder;
+                            }
+                        }
+                        if (match.id === "M18") { // Johan C vs Naib Johan A
+                            if (side === 'A') {
+                                return isGroupCompleted('C') ? this.standings.C[0].name : placeHolder;
+                            } else {
+                                return isGroupCompleted('A') ? this.standings.A[1].name : placeHolder;
+                            }
+                        }
+                        if (match.id === "M19") { // Johan D vs Naib Johan B
+                            if (side === 'A') {
+                                return isGroupCompleted('D') ? this.standings.D[0].name : placeHolder;
+                            } else {
+                                return isGroupCompleted('B') ? this.standings.B[1].name : placeHolder;
+                            }
+                        }
+                    }
+
+                    // Dynamic resolving of Separuh Akhir
+                    if (match.round === 'Separuh Akhir') {
+                        const targetSA_A = match.id === 'M20' ? 'M16' : 'M18';
+                        const targetSA_B = match.id === 'M20' ? 'M17' : 'M19';
+                        
+                        if (side === 'A') {
+                            const sa_match = this.matches.find(m => m.id === targetSA_A);
+                            if (sa_match && sa_match.status === 'Tamat') {
+                                return sa_match.scoreA > sa_match.scoreB ? this.getMatchTeamName(sa_match, 'A') : this.getMatchTeamName(sa_match, 'B');
+                            }
+                            return match.teamAPlaceholder;
+                        } else {
+                            const sa_match = this.matches.find(m => m.id === targetSA_B);
+                            if (sa_match && sa_match.status === 'Tamat') {
+                                return sa_match.scoreA > sa_match.scoreB ? this.getMatchTeamName(sa_match, 'A') : this.getMatchTeamName(sa_match, 'B');
+                            }
+                            return match.teamBPlaceholder;
+                        }
+                    }
+
+                    // Dynamic resolving of Penentuan Tempat Ke-3 & 4
+                    if (match.round === 'Penentuan Tempat Ke-3 & 4') {
+                        if (side === 'A') {
+                            const sf1 = this.matches.find(m => m.id === 'M20');
+                            if (sf1 && sf1.status === 'Tamat') {
+                                return sf1.scoreA < sf1.scoreB ? this.getMatchTeamName(sf1, 'A') : this.getMatchTeamName(sf1, 'B');
+                            }
+                            return match.teamAPlaceholder;
+                        } else {
+                            const sf2 = this.matches.find(m => m.id === 'M21');
+                            if (sf2 && sf2.status === 'Tamat') {
+                                return sf2.scoreA < sf2.scoreB ? this.getMatchTeamName(sf2, 'A') : this.getMatchTeamName(sf2, 'B');
+                            }
+                            return match.teamBPlaceholder;
+                        }
+                    }
+
+                    // Dynamic resolving of Finals
+                    if (match.round === 'Akhir') {
+                        if (side === 'A') {
+                            const sf1 = this.matches.find(m => m.id === 'M20');
+                            if (sf1 && sf1.status === 'Tamat') {
+                                return sf1.scoreA > sf1.scoreB ? this.getMatchTeamName(sf1, 'A') : this.getMatchTeamName(sf1, 'B');
+                            }
+                            return match.teamAPlaceholder;
+                        } else {
+                            const sf2 = this.matches.find(m => m.id === 'M21');
+                            if (sf2 && sf2.status === 'Tamat') {
+                                return sf2.scoreA > sf2.scoreB ? this.getMatchTeamName(sf2, 'A') : this.getMatchTeamName(sf2, 'B');
+                            }
+                            return match.teamBPlaceholder;
+                        }
+                    }
+
+                    return '';
+                },
+
+                // Formatting tournament round tags nicely
+                getRoundLabel(match) {
+                    if (match.round === 'Group') {
+                        return `Kumpulan ${match.group}`;
+                    }
+                    return match.round;
+                },
+
+                // Menjana singkatan nama sekolah secara dinamik sebagai lencana fallback
+                getTeamInitials(name) {
+                    if (!name || name.includes('Johan') || name.includes('Naib') || name.includes('Pemenang') || name.includes('Kalah')) return '??';
+                    const cleanName = name.replace(/SK\s+/i, '');
+                    const words = cleanName.split(' ');
+                    if (words.length >= 2) {
+                        return (words[0][0] + words[1][0]).toUpperCase();
+                    }
+                    return cleanName.substring(0, 2).toUpperCase();
+                },
+
+                // Menjana warna lencana rawak yang tetap berdasarkan kod nama sekolah
+                getTeamColor(name) {
+                    if (!name || name.includes('Johan') || name.includes('Naib') || name.includes('Pemenang') || name.includes('Kalah')) {
+                        return 'from-slate-700 to-slate-800';
+                    }
+                    const colors = [
+                        'from-pink-600 to-rose-600',
+                        'from-amber-500 to-orange-600',
+                        'from-emerald-600 to-teal-600',
+                        'from-blue-600 to-indigo-600',
+                        'from-violet-600 to-purple-600',
+                        'from-fuchsia-600 to-pink-600',
+                        'from-cyan-500 to-blue-600'
+                    ];
+                    let hash = 0;
+                    for (let i = 0; i < name.length; i++) {
+                        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+                    }
+                    const index = Math.abs(hash) % colors.length;
+                    return colors[index];
+                },
+
+                // Bracket design styling rules
+                getBracketWinnerClass(match, side) {
+                    if (match.status !== 'Tamat') return 'text-slate-300 bg-slate-900/40';
+                    const isWinner = side === 'A' ? match.scoreA > match.scoreB : match.scoreB > match.scoreA;
+                    return isWinner 
+                        ? 'bg-indigo-950 text-indigo-300 font-extrabold border-l-2 border-indigo-500' 
+                        : 'text-slate-600 line-through opacity-60';
+                },
+
+                // Push notifications
+                showToast(message, type = 'success') {
+                    const id = Date.now();
+                    this.toasts.push({ id, message, type });
+                    setTimeout(() => {
+                        this.toasts = this.toasts.filter(t => t.id !== id);
+                    }, 4000);
+                },
+
+                // Admin validation with code "2026"
+                verifyAdminPIN() {
+                    if (this.adminPINInput === '2026') {
+                        this.isAdmin = true;
+                        this.adminPINInput = '';
+                        sessionStorage.setItem('mersing_netball_admin', 'true');
+                        this.showToast("Log masuk Urus Setia Berjaya!");
+                    } else {
+                        this.showToast("PIN keselamatan salah!", "error");
+                    }
+                },
+
+                // Admin logout
+                logoutAdmin() {
+                    this.isAdmin = false;
+                    sessionStorage.removeItem('mersing_netball_admin');
+                    this.showToast("Urus Setia berjaya log keluar.");
+                },
+
+                // Open modal for score change
+                openEditModal(match) {
+                    if (!this.isAdmin) {
+                        this.showToast("Sila log masuk di Panel Urus Setia terlebih dahulu.", "error");
+                        this.activeTab = 'admin';
+                        return;
+                    }
+                    // Shallow copy to prevent live editing of snapshot data until saved
+                    this.editingMatch = { 
+                        ...match,
+                        // Make sure resolved dynamic names are locked in if saving knockout
+                        resolvedTeamA: this.getMatchTeamName(match, 'A'),
+                        resolvedTeamB: this.getMatchTeamName(match, 'B')
+                    };
+                },
+
+                closeEditModal() {
+                    this.editingMatch = null;
+                },
+
+                incrementScore(side) {
+                    if (side === 'A') this.editingMatch.scoreA++;
+                    else this.editingMatch.scoreB++;
+                },
+
+                decrementScore(side) {
+                    if (side === 'A' && this.editingMatch.scoreA > 0) this.editingMatch.scoreA--;
+                    else if (side === 'B' && this.editingMatch.scoreB > 0) this.editingMatch.scoreB--;
+                },
+
+                // Update details inside Firebase matching Rules
+                async saveMatchChanges() {
+                    this.saving = true;
+                    try {
+                        const app = initializeApp(firebaseConfig);
+                        const db = getFirestore(app);
+                        const matchDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'matches', this.editingMatch.id);
+
+                        // If editing match is Knockout stage, save resolved team names so progress remains hardcoded
+                        const updatePayload = {
+                            scoreA: this.editingMatch.scoreA,
+                            scoreB: this.editingMatch.scoreB,
+                            status: this.editingMatch.status,
+                            court: this.editingMatch.court,
+                            time: this.editingMatch.time,
+                            date: this.editingMatch.date
+                        };
+
+                        if (this.editingMatch.round !== 'Group') {
+                            updatePayload.teamA = this.editingMatch.resolvedTeamA;
+                            updatePayload.teamB = this.editingMatch.resolvedTeamB;
+                        }
+
+                        await updateDoc(matchDocRef, updatePayload);
+                        this.showToast(`Mata perlawanan #${this.editingMatch.id} dikemas kini.`);
+                        this.closeEditModal();
+                    } catch (error) {
+                        this.showToast("Gagal menyimpan data ke awan.", "error");
+                        console.error(error);
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+
+                // Trigger seeding baseline data on Firestore empty
+                async seedDatabase(db) {
+                    const batch = writeBatch(db);
+                    INITIAL_MATCHES.forEach(m => {
+                        const matchDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'matches', m.id);
+                        batch.set(matchDocRef, m);
+                    });
+                    await batch.commit();
+                    this.showToast("Inisialisasi jadual kejohanan berjaya.");
+                },
+
+                // Critical Reset Tournament scores to baseline empty
+                async triggerResetTournament() {
+                    this.resetting = true;
+                    try {
+                        const app = initializeApp(firebaseConfig);
+                        const db = getFirestore(app);
+                        const batch = writeBatch(db);
+
+                        INITIAL_MATCHES.forEach(m => {
+                            const matchDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'matches', m.id);
+                            batch.set(matchDocRef, m);
+                        });
+
+                        await batch.commit();
+                        this.showToast("Kejohanan telah diset semula kepada data asal.");
+                        this.showResetConfirmation = false;
+                    } catch (error) {
+                        this.showToast("Gagal set semula kejohanan.", "error");
+                    } finally {
+                        this.resetting = false;
+                    }
+                }
+            }
+        }).mount('#app');
+    </script>
+
+</body>
+</html>
